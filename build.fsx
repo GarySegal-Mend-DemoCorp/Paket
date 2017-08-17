@@ -4,6 +4,7 @@ System.IO.Directory.SetCurrentDirectory __SOURCE_DIRECTORY__
 // --------------------------------------------------------------------------------------
 
 #r @"packages/build/FAKE/tools/FakeLib.dll"
+#r "packages/build/Pri.LongPath/lib/net45/Pri.LongPath.dll"
 #r "System.IO.Compression.FileSystem"
 
 open Fake
@@ -13,6 +14,7 @@ open Fake.ReleaseNotesHelper
 open Fake.UserInputHelper
 open System
 open System.IO
+open Pri.LongPath
 open Fake.Testing.NUnit3
 open System.Security.Cryptography
 
@@ -62,7 +64,7 @@ let gitName = "Paket"
 // The url for the raw files hosted
 let gitRaw = environVarOrDefault "gitRaw" "https://raw.github.com/fsprojects"
 
-let dotnetcliVersion = "1.0.4"
+let dotnetcliVersion = "2.1.0-preview1-007002"
 
 let dotnetSDKPath = System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) </> "dotnetcore" |> FullName
 
@@ -93,8 +95,8 @@ let stable =
     | _ -> release
 
 let genFSAssemblyInfo (projectPath) =
-    let projectName = System.IO.Path.GetFileNameWithoutExtension(projectPath)
-    let folderName = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(projectPath))
+    let projectName = Path.GetFileNameWithoutExtension(projectPath)
+    let folderName = Path.GetFileName(System.IO.Path.GetDirectoryName(projectPath))
     let basePath = "src" @@ folderName
     let fileName = basePath @@ "AssemblyInfo.fs"
     CreateFSharpAssemblyInfo fileName
@@ -107,8 +109,8 @@ let genFSAssemblyInfo (projectPath) =
         Attribute.InformationalVersion release.NugetVersion ]
 
 let genCSAssemblyInfo (projectPath) =
-    let projectName = System.IO.Path.GetFileNameWithoutExtension(projectPath)
-    let folderName = System.IO.Path.GetDirectoryName(projectPath)
+    let projectName = Path.GetFileNameWithoutExtension(projectPath)
+    let folderName = Path.GetDirectoryName(projectPath)
     let basePath = folderName @@ "Properties"
     let fileName = basePath @@ "AssemblyInfo.cs"
     CreateCSharpAssemblyInfo fileName

@@ -2,7 +2,9 @@
 #r "../../../bin/Chessie.dll"
 #r "../../../bin/Paket.Core.dll"
 #r "../../../packages/build/FAKE/tools/FakeLib.dll"
+#r "../../../packages/build/Pri.LongPath/lib/net45/Pri.LongPath.dll"
 open System.IO
+open Pri.LongPath
 open Fake
 open Paket
 open Paket.Domain

@@ -5,6 +5,7 @@ open NUnit.Framework
 open FsUnit
 open System.Xml
 open System.IO
+open Pri.LongPath
 
 let convertAndCompare file source expectedResult =
     let projectFile = ProjectFile.LoadFromString(file, source)
@@ -61,9 +62,10 @@ let ``should remove NuGetPackageImportStamp but not PropertyGroup with items``()
 let testDataRootPath = Path.Combine(__SOURCE_DIRECTORY__, "TestData")
 let TestData: obj[][] = [|
     for f in Directory.GetFiles testDataRootPath do
-        let allText = File.ReadAllText f
-        if not (allText.Contains "NuGetPackageImportStamp") then
-            yield [| Path.GetFileName f |]
+        if not (Path.GetFileName(f) = "paket.dependencies") then
+            let allText = File.ReadAllText f
+            if not (allText.Contains "NuGetPackageImportStamp") then
+                yield [| Path.GetFileName f |]
 |]
 
 
