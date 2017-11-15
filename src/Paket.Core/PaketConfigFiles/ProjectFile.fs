@@ -129,6 +129,7 @@ module LanguageEvaluation =
         | ".csproj" -> Some CSharp
         | ".vbproj" -> Some VisualBasic
         | ".fsproj" -> Some FSharp
+        | ".fsprojtest" -> Some FSharp // used during unit-testing
         | ".vcxproj" -> Some CPP
         | ".wixproj" -> Some WiX
         | ".nproj"  -> Some Nemerle
@@ -707,6 +708,17 @@ module ProjectFile =
     }
 
     let generateXml (model:InstallModel) (usedFrameworkLibs:HashSet<TargetProfile*string>) (aliases:Map<string,string>) (copyLocal:bool option) (specificVersion:bool option) (importTargets:bool) (referenceCondition:string option) (allTargetProfiles:Set<TargetProfile>) (project:ProjectFile) : XmlContext =
+
+        // HACK! This should be done somewhere else!
+        let allTargetProfiles =
+            match project.Language with
+            | CSharp | FSharp | VisualBasic | Nemerle ->
+                // we are a strong managed language and don't care about no natives!
+                allTargetProfiles |> Set.filter (function
+                    | SinglePlatform (Native _) -> false
+                    | _ -> true)
+            | WiX | CPP | Unknown -> allTargetProfiles
+
         let references = 
             getCustomReferenceAndFrameworkNodes project
             |> List.map (fun node -> node.Attributes.["Include"].InnerText.Split(',').[0])
@@ -840,13 +852,26 @@ module ProjectFile =
                                  condition,createItemGroup libFolder.Targets rest libraries,false]
                         )
 
-        // global targets are targets, that are either directly in the /build folder.
+        // similar to assemblies, the best-matching directory should be taken.
+        // If there is only one directory, and it is applicable to all relevant frameworks, *and* there are no custom conditions, then the import can be simplified.
+        // Note that this simplification is required for some packages to work correctly, for example: https://github.com/fsprojects/Paket/issues/2227
         // (ref https://docs.microsoft.com/en-us/nuget/create-packages/creating-a-package#including-msbuild-props-and-targets-in-a-package). 
         let globalTargets, frameworkSpecificTargets =
-            if not importTargets then List.empty, List.empty else
-            let sortedTargets = model.TargetsFileFolders |> List.sortBy (fun lib -> lib.Path)
-            sortedTargets
-            |> List.partition (fun lib -> "" = lib.Path.Name)
+            if not importTargets then [],[] else
+            let sortedFolders = model.TargetsFileFolders |> List.sortBy (fun dir -> dir.Path)
+            let applicableFolders = sortedFolders |> List.filter (fun dir -> dir.Targets |> Set.intersect allTargetProfiles |> Set.isEmpty |> not)
+            assert (applicableFolders = sortedFolders) // I think there is already a filtering done before - let's see if CI aggrees
+            if referenceCondition <> None then [], applicableFolders else
+            match applicableFolders with
+            | [ dir ] ->
+                let missing = allTargetProfiles - dir.Targets
+                if missing |> Set.isEmpty then
+                    [ dir ] , []
+                else
+                    System.Diagnostics.Debug.WriteLine <| sprintf "%A" missing
+                    [], applicableFolders
+            | _ -> [], applicableFolders
+
 
         let frameworkSpecificTargetsFileConditions =
             frameworkSpecificTargets

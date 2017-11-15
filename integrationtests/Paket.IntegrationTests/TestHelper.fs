@@ -52,9 +52,9 @@ let cleanup scenario =
         CleanDir scenarioPath
 
 let cleanupAllScenarios() =
-    for scenario in scenarios do
+    for scenario in scenarios.ToArray() do
+        scenarios.Remove(scenario) |> ignore
         cleanup scenario
-    scenarios.Clear()
 
 
 let prepare scenario =
