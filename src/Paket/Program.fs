@@ -577,7 +577,7 @@ let pack (results : ParseResults<_>) =
         |> legacyBool results (ReplaceArgument("--symbols", "symbols"))
     let includeReferencedProjects =
         (results.Contains PackArgs.Include_Referenced_Projects,
-         results.Contains PackArgs.Include_Referenced_Projects_Legacy) 
+         results.Contains PackArgs.Include_Referenced_Projects_Legacy)
         |> legacyBool results (ReplaceArgument("--include-referenced-projects", "Include_Referenced_Projects"))
     let projectUrl =
         (results.TryGetResult PackArgs.Project_Url,
@@ -681,7 +681,8 @@ let fixNuspecs silent (results : ParseResults<_>) =
         |> List.collect (fun s -> s.Split([|';'|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList)
         |> List.map (fun s -> s.Trim())
     let conditions =
-        results.GetResult FixNuspecsArgs.Conditions
+        results.TryGetResult FixNuspecsArgs.Conditions
+        |> Option.defaultValue []
         |> List.collect (fun s -> s.Split([|';'|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList)
         |> List.map (fun s -> s.Trim())
 
